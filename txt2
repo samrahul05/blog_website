@@ -1,0 +1,129 @@
+router.post('/createcomment',verifyToken, async(req,res)=>{
+    const post =await Post.findOne({})
+  const{ comment , author ,postId  } = req.body;
+  if(!( comment , author ,postId ))
+  {
+      return res.status(400).json({ message: 'comment is required' });
+  }
+  const userId =req.user.id;
+  const newMessage = new Comment({ userId, comment , author ,postId  });
+
+  await newMessage.save();
+  res.json({
+      message:'Data Posted Successfully', data:newMessage
+  })
+  
+})
+
+
+const jwt = require('jsonwebtoken')
+
+const verifyToken = (req,res,next) =>{
+    const token = req.cookies.jwt;
+
+    if(!token)
+    {
+        return res.status(401).json({ message: 'Authentication required' });
+    }
+    jwt.verify(token,process.env.SECRETKEY ,(err,decoded) =>{
+        if(err)
+        {
+            return res.status(403).json({ message: 'Failed to authenticate token' });
+        }
+        req.User = decoded;
+        console.log(req.User);
+        // res.json('Authentication successfull')
+        next()
+    })
+}
+module.exports=verifyToken;  
+
+
+
+
+// Update data endpoint
+router.put('/updatepost/:id', verifyToken, async (req, res) => {
+    const userId = req.user.id;
+    const{title,des,username ,categories }= req.body;
+
+    try {
+        const updatedMessage = await Post.findOneAndUpdate(
+            { _id: req.params.id, userId }, // Match both message ID and user ID
+            {title ,des ,username ,categories },
+            { new: true } // To return the updated record
+            
+        );
+        
+
+        if (!updatedMessage) {
+            return res.status(404).json({ message: 'Data not found or unauthorized' });
+        }
+
+        res.json({ message: 'Data updated successfully', data: updatedMessage });
+    } catch (error) {
+        res.status(500).json({ message: 'Error updating data' });
+    }
+});
+
+
+router.delete('/deletepost/:id', verifyToken, async (req, res) => {
+    const userId = req.user.id;
+
+    try {
+        const deletedPost= await Post.findOneAndDelete({_id: req.params.id,userId // Match both message ID and user ID
+        });
+
+        if (!deletedPost) {
+            return res.status(404).json({ message: 'Data not found or unauthorized' });
+        }
+
+        res.json({ message: 'Data deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error deleting data' });
+    }
+});
+
+
+router.get('/getpost', verifyToken, async(req,res)=>{
+    const userId =req.user.id;
+    const post = await Post.find({userId})
+    res.json({ message:'Data retrieved successfully', data: message });
+})
+
+
+router.post('/createcomment',verifyToken, async(req,res)=>{
+    // const user 
+    const{ comment , author  } = req.body;
+    if(!(comment , author ))
+    {
+        return res.status(400).json({ message: 'Message is required' });
+    }
+    const userId =req.User.id;
+    const newComment = new Comment({ userId,comment ,author });
+
+    await newComment.save();
+    res.json({
+        message:'Data Posted Successfully', data:newComment
+    })
+})
+
+// router.post('/createcomment',verifyToken, async(req,res)=>{
+//   const userId =req.params.id;
+
+//   // const  postId = req.params.id
+//   console.log(userId)
+//   const{ comment , author, postId} = req.body;
+//   if(! {comment , author} )
+//   {
+//       return res.status(400).json({ message: 'comment is required' });
+//   }
+  
+  
+//   const newMessage = new Comment({ userId, comment , author});
+//   //  console.log(newMessage)
+//   await newMessage.save();
+//   res.json({
+//       message:'Data Posted Successfully', data:newMessage
+//   })
+  
+// })

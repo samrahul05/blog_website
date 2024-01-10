@@ -1,0 +1,274 @@
+
+//CREATE
+router.post("/create",verifyToken,async (req,res)=>{
+    const userId = req.user.id;
+    const {comment , author ,postId } =req.body
+    try{
+        const newComment=new Comment(req.body)
+        const savedComment=await newComment.findsave()
+        res.status(200).json(savedComment)
+
+        // const  newComment =await User.find(
+        //     {_id: req.params.id,userId},
+        //     {comment , author ,postId },
+        //     { new: true }
+
+        // )
+        // await newComment.save()
+        // res.json({message:"data stored",data:newComment})
+    }
+    catch(err){
+        res.status(500).json(err)
+    }
+     
+
+})
+
+
+
+const express = require('express')
+const app = express()
+const path = require('path')
+const multer = require('multer')
+const { log } = require('console')
+
+app.set('views',path.join(__dirname, "views" ))   
+
+
+app.set('view engine',"ejs")
+
+ 
+var storage = multer.diskStorage({
+    
+       
+    destination : function( req, file, cb){           // cb-call back    
+        
+         cb(null, 'images')
+
+    },
+    filename :function(req, file, cb){
+        
+        cb(null, file.originalname.replace(/\.[^/.]+$/,"") + '-' + Date.now() + path.extname(file.originalname))
+    }
+})
+
+
+
+let  maxSize =2 * 1000 * 1000
+
+let upload =    multer({
+    storage :storage,
+    limits :{
+        fileSize : maxSize    
+    },
+    fileFilter : function(req, file, cb){
+        
+        console.log(file.mimetype);
+        let filetypes =/jpeg|jpg|png/;
+     
+        let mimetype =filetypes.test(file.mimetype)
+        
+        let extname =filetypes.test(path.extname(file.originalname).toLowerCase())
+        if(mimetype && extname){
+             return  cb(null, true);
+        }
+        cb("Error:this file id not supported please use this files:" + filetypes)
+        
+    }
+}).single('mypic')
+
+
+app.post('/upload',(req, res, next)=>{
+    upload(req, res, function(err){
+        
+        if(err){
+            if(err instanceof multer.MulterError && err.code == "LIMIT_FILE_SIZE"){
+                return res.send("File size is maximum 2mb");
+             }
+            res.send(err);
+        }else{
+            res.send("Success Image Uploaded!")
+        }
+    })
+})
+
+app.listen(3030,()=>{
+    console.log("server running :3030")
+})
+
+
+router.post('/upload', upload.single('imageUrl'), async (req, res) => {
+   
+    if (!req.file) {
+        return res.json("no image");
+    }
+  
+    cloudinary.uploader.upload_stream({ resource_type: 'image' }, async (error, result) => {
+        if (error) {
+          return res.status(500).json({ error: 'Error uploading image to Cloudinary' });
+        }
+    
+        try {
+        //   const userId =req.user.id;
+        //   const userId =req.user.id;
+          const{imageUrl ,title ,des ,username ,categories } = req.body;
+          if(!( imageUrl ,title ,des ,username ,categories ))
+  {
+      return res.status(400).json({ message: 'comment is required' });
+  }
+  const userId =req.user.id;
+  const newPost = new Post({ userId, imageUrl ,title ,des ,username ,categories  });
+
+  await newPost.save();
+  console.log(newPost)
+  res.json({
+      message:'Data Posted Successfully', data:newPost
+  })
+  
+      
+        // const newPost = new Post({userId, imageUrl, title, des, username, categories})
+         
+        } catch (err) {
+          console.error('Error saving image URL to MongoDB:', err.message);
+          res.status(500).json({ error: 'Error saving image URL to MongoDB' });
+        }
+      }).end(req.file.buffer);
+    });
+  
+
+
+
+
+    router.post('/upload', upload.single('imageUrl'), async (req, res) => {
+        if (!req.file) {
+            return res.json("no image");
+        }
+      
+        cloudinary.uploader.upload_stream({ resource_type: 'image' }, async (error, result) => {
+            if (error) {
+              return res.status(500).json({ error: 'Error uploading image to Cloudinary' });
+            }
+        
+            try {
+             
+              const newPost = new Post({ 
+                _id:req.body.id,userId,
+                imageUrl: result.url,
+                title: req.body.name,
+                des: req.body.price,
+                username: req.body.description,
+                categories: req.body.category,
+             }); 
+            // const newPost = new Post({userId, imageUrl, title, des, username, categories})
+              await newPost.save();
+              console.log(newPost)
+              res.json("image is Send successfully");
+            } catch (err) {
+              console.error('Error saving image URL to MongoDB:', err.message);
+              res.status(500).json({ error: 'Error saving image URL to MongoDB' });
+            }
+          }).end(req.file.buffer);
+        });
+      
+        
+
+
+        router.post('/create',verifyToken, async(req,res)=>{
+            const{ comment , author ,postId  } = req.body;
+            if(!( comment , author ,postId ))
+            {
+                return res.status(400).json({ message: 'comment is required' });
+            }
+            const userId =req.user.id;
+            const newMessage = new Comment({ userId, comment , author ,postId  });
+          
+            await newMessage.save();
+            res.json({
+                message:'Data Posted Successfully', data:newMessage
+            })
+            
+          })
+
+
+
+          router.post('/createcomment',verifyToken, async(req,res)=>{
+            const{ comment , author ,postId  } = req.body;
+            const post =await Post.findOne({postId})
+            if(!post){
+                return res.json({message:"comment not posted"})
+            }
+            {
+                const postId =req.post.postId;
+                const newMessage = new Comment({ comment , author ,postId  });
+              
+                await newMessage.save();
+                res.json({
+                    message:'Data Posted Successfully', data:newMessage
+                })
+                
+            }
+           
+            
+          })
+          
+
+          
+// router.post('/create',verifyToken, async(req,res)=>{
+//   const{ comment , author ,postId  } = req.body;
+//   if(!( comment , author ,postId ))
+//   {
+//       return res.status(400).json({ message: 'comment is required' });
+//   }
+//   const userId =req.user.id;
+//   const newMessage = new Comment({ userId, comment , author ,postId  });
+
+//   await newMessage.save();
+//   res.json({
+//       message:'Data Posted Successfully', data:newMessage
+//   })
+  
+// })
+
+
+
+router.post('/postupload', verifyToken,upload.single('imageUrl'), async (req, res) => {
+   
+    if (!req.file) {
+        return res.json("no image");
+    }
+    const userId =req.user.id;
+  
+    cloudinary.uploader.upload_stream({ resource_type: 'image' }, async (error, result) => {
+        if (error) {
+          return res.status(500).json({ error: 'Error uploading image to Cloudinary' });
+        }
+    
+        try {
+      
+        
+          const{imageUrl ,title ,des ,username ,categories }= req.body;
+          if(!( imageUrl ,title ,des ,username ,categories ))
+  {
+      return res.status(400).json({ message: 'comment is required' });
+  }
+  
+  const newPost = new Post({ userId, imageUrl:result.url ,title ,des ,username ,categories  });
+  
+  await newPost.save();
+  const post = 
+  console.log()
+  res.json({
+      message:'Data Posted Successfully', data:newPost
+  })
+  
+      
+        // const newPost = new Post({userId, imageUrl, title, des, username, categories})
+         
+        } catch (err) {
+          console.error('Error saving image URL to MongoDB:', err.message);
+          res.status(500).json({ error: 'Error saving image URL to MongoDB' });
+        }
+      }).end(req.file.buffer);
+    });
+  
+  
